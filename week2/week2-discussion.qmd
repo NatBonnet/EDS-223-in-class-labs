@@ -1,0 +1,53 @@
+---
+title: "Week 2 Discussion Section"
+subtitle: "Working with multiple vector types"
+author: "Nathalie Bonnet"
+date: last-modified
+format:
+  html:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# 1. Setup
+
+## Load in libraries
+
+```{r}
+#| message: false
+#| warning: false
+rm(list = ls())
+library(sf) # for handling vector data
+library(tmap) # for making maps
+library(tidyverse) # because we love the tidyverse
+library(spData) # preloaded spatial data
+```
+
+## Load in data
+
+```{r}
+birds <- read_csv(here::here("week2", "data", "dataves.csv"))
+road <- read_sf(here::here("week2", "data", "RDLINE_colombia", "RDLINE_colombia.dbf"))
+ecoregion <- read_sf(here::here("week2", "data", "Colombia", "Colombia.dbf"))
+```
+
+## Data transformation
+
+```{r}
+# decimal_longitude and decimal_latitude to long and lat in bird data
+
+birds<- birds %>% 
+  rename(long = "decimal_longitude") %>% 
+           rename(lat = "decimal_latitude")
+
+
+```
+
+# Convert birds into sf object
+
+```{r}
+birds %>% 
+st_as_sf(coords = c("long", "lat"), crs = 4326)
+```
+

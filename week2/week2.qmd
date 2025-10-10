@@ -1,7 +1,7 @@
 ---
 title: "Week 2 Lab"
 subtitle: "Intro to vector data with `sf` and coordinate reference systems"
-author: "Your Name"
+author: "Nathalie Bonnet"
 date: last-modified
 format:
   html:
