@@ -28,8 +28,8 @@ library(spData) # preloaded spatial data
 
 ```{r}
 birds <- read_csv(here::here("week2", "data", "dataves.csv"))
-road <- read_sf(here::here("week2", "data", "RDLINE_colombia", "RDLINE_colombia.dbf"))
-ecoregion <- read_sf(here::here("week2", "data", "Colombia", "Colombia.dbf"))
+road <- read_sf(here::here("week2", "data", "RDLINE_colombia", "RDLINE_colombia.shp"))
+ecoregion <- read_sf(here::here("week2", "data", "Colombia", "Colombia.shp"))
 ```
 
 ## Data transformation
@@ -38,16 +38,96 @@ ecoregion <- read_sf(here::here("week2", "data", "Colombia", "Colombia.dbf"))
 # decimal_longitude and decimal_latitude to long and lat in bird data
 
 birds<- birds %>% 
-  rename(long = "decimal_longitude") %>% 
-           rename(lat = "decimal_latitude")
-
-
+  as_tibble() %>% 
+  rename(long = "decimal_longitude", 
+         lat = "decimal_latitude") 
 ```
 
 # Convert birds into sf object
 
 ```{r}
-birds %>% 
+birds <- birds %>% 
 st_as_sf(coords = c("long", "lat"), crs = 4326)
+```
+ shape files are multiple file formats and require at least .shp, .dbf, .shx.
+shapefiles store elements of single geometryies 
+no NULL value, problematic for numeric values
+- Geodatabases (.gdb) is the preferred alternative by people working with ESRI 
+
+# 2. View class and geometry type
+```{r}
+# Check class of all files
+class(birds)
+class(ecoregion)
+class(road)
+
+# Look at geometry types
+st_geometry_type(birds)
+st_geometry_type(ecoregion)
+st_geometry_type(road)
+```
+
+# 3. Select macro ecoregion of interest
+```{r}
+unique(ecoregion$N1_MacroBi)
+andes <- ecoregion %>% 
+  filter(N1_MacroBi == "Andean")
+```
+
+Plot using tmap
+```{r}
+tm_shape(andes) +
+  tm_polygons()
+```
+
+
+# 4. Play with coordinate reference system (CRS)
+
+```{r}
+# Use `st_crs()` to check crs and units
+st_crs(birds)
+st_crs(andes) # shared Projcrs WGS 84 with road
+st_crs(road)
+
+# Pulling out 
+st_crs(birds)$units
+st_crs(andes)$units
+st_crs(road)$units
+```
+
+pull out lat and long from the geometry and drop geom column
+```{r}
+mutated_birds <- birds %>% 
+  mutate(long = unlist(purrr::map(birds$geometry, 1)), 
+         lat = unlist(purrr::map(birds$geometry, 2))) %>% 
+  st_drop_geometry()
+  
+
+# Or
+# mutated_birds <- birds %>% 
+# mutate(long = st_coordinates(birds)[,1], 
+#lon = st_coordinates(birds)[,2]) %>% 
+# st_drop_geometry()
+```
+
+reconvert to the proper format
+```{r}
+birds2 <- mutated_birds %>% 
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
+```
+
+# 5. Make a map
+```{r}
+st_crs(birds2)
+```
+
+```{r}
+tm_shape(andes) +
+  tm_polygons() +
+  tm_shape(road, bbox = st_bbox(andes)) +
+  tm_lines() +
+  tm_shape(birds2) +
+  tm_dots() +
+  tm_title("Columbia Andean Ecoregions, Roads, and Bird Point Observations")
 ```
 
