@@ -78,7 +78,7 @@ london_attrib <- data.frame(
 And we attach the simple feature collection and data frame to create a `sf` object. Check out the class of the new object we created.
 
 ```{r}
-# COmbine geometry and data frame
+# Combine geometry and data frame
 london_sf <- st_sf(london_attrib, geometry = london_geom)
 
 # Check the class
