@@ -1,0 +1,86 @@
+---
+title: "week4-discussion-raster-manipulation"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(spData)
+library(spDataLarge)
+library(sf)
+library(stars)
+library(terra)
+```
+
+
+```{r}
+dem <- terra::rast(system.file("raster/dem.tif", package = "spDataLarge"))
+landsat <- terra::rast(system.file("raster/landsat.tif", package = "spDataLarge"))
+srtm <- terra::rast(system.file("raster/srtm.tif", package = "spDataLarge"))
+```
+
+```{r}
+boxplot(dem)
+hist(dem)
+```
+```{r}
+# Create matrix with elevation thresholds
+elev <- matrix(c(-Inf, 300, 1, 
+                 300, 500, 2, 
+                 500, Inf, 3), 
+               nrow=3, byrow=TRUE)
+
+# Reclassify raster object
+reclass <- classify(dem, rcl = elev)
+
+# Assign levels to numerical categories
+levels(reclass) <- tibble(id = 1:3, 
+                          cats = c("low", "medium", "high"))
+
+elev_mean <- zonal(dem, reclass, fun = "mean")
+elev_mean
+```
+
+
+```{r}
+scale <- 0.0001
+offset <- 0
+
+scale_function <- function(x){
+  x* scale + offset
+}
+
+landsat_scaled <- terra::app(landsat, fun = scale_function)
+
+
+# Create function to find Normalized Difference Vegetation Index (NDVI) and Normalized Difference Water Index (NDWI)
+ndwi <- function(green, nir){
+  (green - nir)/(green + nir)
+}
+
+ndvi <- function(nir, red){
+  (nir - red)/(nir +red)
+}
+
+ndwi_rast <- lapp(landsat_scaled[[c(2, 4)]],
+                  fun = ndwi)
+ndvi_rast <- lapp(landsat_scaled[[c(4, 3)]], 
+                  fun = ndvi)
+
+plot(ndwi_rast,
+     main = "Zion National Park NDWI")
+
+plot(ndvi_rast,
+     main = "Zion National Park NDVI")
+```
+```{r}
+combine <- c(ndvi_rast, ndwi_rast) # Stack rasters
+
+plot(combine, main = c("NDVI", "NDWI")) # Plot
+```
+
+```{r}
+# Calculate correlation between raster layers 
+terra::layerCor(combine, fun = cor)
+```
+
