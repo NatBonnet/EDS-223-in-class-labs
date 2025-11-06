@@ -1,0 +1,35 @@
+---
+title: "week5-discussion"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(sf)
+library(terra)
+library(spData)
+```
+
+```{r}
+nz_height <- nz_height
+grain <- terra::rast(system.file("raster/grain.tif", package = "spData"))
+```
+
+
+```{r}
+# Check units of elevation
+st_crs(nz_height)$units
+
+
+# Filter for elevation points greater than 3100
+nz_high <- nz_height %>% 
+  filter(elevation > 3100)
+```
+
+```{r}
+# Make a template raster 
+nz_rast <- rast(ext(nz_high), 
+                resolution=3000, 
+                crs = crs(nz_high))
+```
+
